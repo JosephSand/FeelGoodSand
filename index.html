@@ -331,8 +331,9 @@
             <div id="bg-close-admin-menu" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
             <div class="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] overflow-y-auto">
                 <button id="btn-close-admin-menu" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
-                <h3 class="text-xl font-black text-orange-600 mb-4 flex items-center gap-2"><i class="ph ph-cooking-pot"></i> Crear Platillo</h3>
+                <h3 class="text-xl font-black text-orange-600 mb-4 flex items-center gap-2"><i class="ph ph-cooking-pot"></i> Crear/Editar Platillo</h3>
                 <form id="form-admin-menu" class="space-y-3">
+                    <input type="hidden" id="admin-meal-id">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-[10px] font-bold text-gray-500 uppercase">Día</label>
@@ -640,6 +641,15 @@
             userProfile = { ...profileData, nutrition, weightHistory };
 
             try {
+                // Verificar si el correo ya existe en Firestore
+                const docSnap = await getDoc(doc(db, "users", userProfile.email));
+                if (docSnap.exists()) {
+                    alert("Este correo ya existe en la base de datos. Contáctate con el administrador si no recuerdas tu contraseña.");
+                    btnSubmit.innerHTML = 'Registrarse y Calcular';
+                    btnSubmit.disabled = false;
+                    return;
+                }
+
                 // Guarda en FIRESTORE
                 await setDoc(doc(db, "users", userProfile.email), userProfile);
                 
@@ -784,7 +794,12 @@
             mealsForDay.sort((a, b) => order[a.type] - order[b.type]).forEach(meal => {
                 const imgTag = meal.photo ? `<img src="${meal.photo}" class="w-full h-32 object-cover" alt="Foto">` : `<div class="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400"><i class="ph ph-image text-3xl"></i></div>`;
                 const specialBadge = meal.isSpecial ? `<div class="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-yellow-500 text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md z-10"><i class="ph-fill ph-star"></i> Especial</div>` : '';
-                const deleteBtn = (userProfile.role === 'admin' && !isSocioMode) ? `<button onclick="deleteMenuMeal(${meal.id})" class="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"><i class="ph ph-trash"></i></button>` : '';
+                
+                // Botones de Admin (Editar y Eliminar)
+                const adminBtns = (userProfile.role === 'admin' && !isSocioMode) ? `
+                    <button onclick="editMenuMeal(${meal.id})" class="p-1.5 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-100 transition-colors"><i class="ph ph-pencil-simple"></i></button>
+                    <button onclick="deleteMenuMeal(${meal.id})" class="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"><i class="ph ph-trash"></i></button>
+                ` : '';
 
                 html += `
                     <div class="relative bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all">
@@ -792,7 +807,7 @@
                         <div class="p-4">
                             <div class="flex justify-between items-start mb-2">
                                 <div><p class="text-[10px] text-primary-600 font-bold uppercase tracking-wider">${meal.type}</p><h4 class="font-bold text-gray-800 text-lg leading-tight mt-0.5">${meal.name}</h4></div>
-                                <div class="flex items-center gap-2"><span class="bg-gray-50 text-gray-700 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">${meal.calories} kcal</span>${deleteBtn}</div>
+                                <div class="flex items-center gap-2"><span class="bg-gray-50 text-gray-700 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">${meal.calories} kcal</span>${adminBtns}</div>
                             </div>
                             ${meal.ingredients ? `<p class="text-xs text-gray-500 mt-2"><span class="font-semibold text-gray-700">Ingredientes:</span> ${meal.ingredients}</p>` : ''}
                             ${meal.description ? `<p class="text-xs text-gray-400 mt-1 italic">${meal.description}</p>` : ''}
@@ -802,30 +817,87 @@
             container.innerHTML = html;
         }
 
-        window.deleteMenuMeal = function(id) {
-            if(confirm('¿Eliminar platillo?')) {
-                globalMenu = globalMenu.filter(m => m.id !== id);
-                localStorage.setItem('feelgood_menu', JSON.stringify(globalMenu));
-                renderWeeklyMenu(); updateDashboardUI();
+        window.editMenuMeal = function(id) {
+            const meal = globalMenu.find(m => m.id === id);
+            if (meal) {
+                document.getElementById('admin-meal-id').value = meal.id;
+                document.getElementById('admin-day').value = meal.day;
+                document.getElementById('admin-type').value = meal.type;
+                document.getElementById('admin-name').value = meal.name;
+                document.getElementById('admin-photo').value = meal.photo || '';
+                document.getElementById('admin-calories').value = meal.calories;
+                document.getElementById('admin-ingredients').value = meal.ingredients || '';
+                document.getElementById('admin-desc').value = meal.description || '';
+                document.getElementById('admin-special').checked = meal.isSpecial || false;
+                modals.adminMenu.classList.remove('hidden');
             }
         };
 
-        // ADMIN CREAR MENÚ
-        document.getElementById('btn-admin-menu').addEventListener('click', () => { document.getElementById('admin-day').value = selectedDay; modals.adminMenu.classList.remove('hidden'); });
-        const closeAdminMenu = () => { modals.adminMenu.classList.add('hidden'); document.getElementById('form-admin-menu').reset(); };
+        window.deleteMenuMeal = async function(id) {
+            if(confirm('¿Eliminar platillo permanentemente?')) {
+                try {
+                    await deleteDoc(doc(db, "menu", id.toString()));
+                    globalMenu = globalMenu.filter(m => m.id !== id);
+                    renderWeeklyMenu(); updateDashboardUI();
+                } catch(e) {
+                    console.error("Error al eliminar platillo:", e);
+                    alert("Error eliminando de la base de datos.");
+                }
+            }
+        };
+
+        // ADMIN CREAR/EDITAR MENÚ
+        document.getElementById('btn-admin-menu').addEventListener('click', () => { 
+            document.getElementById('admin-meal-id').value = ''; 
+            document.getElementById('form-admin-menu').reset();
+            document.getElementById('admin-day').value = selectedDay; 
+            modals.adminMenu.classList.remove('hidden'); 
+        });
+        const closeAdminMenu = () => { modals.adminMenu.classList.add('hidden'); document.getElementById('form-admin-menu').reset(); document.getElementById('admin-meal-id').value = ''; };
         document.getElementById('btn-close-admin-menu').addEventListener('click', closeAdminMenu);
         document.getElementById('bg-close-admin-menu').addEventListener('click', closeAdminMenu);
 
-        document.getElementById('form-admin-menu').addEventListener('submit', (e) => {
+        document.getElementById('form-admin-menu').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            btnSubmit.innerHTML = 'Guardando en la Nube...';
+            btnSubmit.disabled = true;
+
+            const existingId = document.getElementById('admin-meal-id').value;
+            const mealId = existingId ? parseInt(existingId) : Date.now();
+
             const newItem = {
-                id: Date.now(), day: document.getElementById('admin-day').value, type: document.getElementById('admin-type').value,
-                name: document.getElementById('admin-name').value, photo: document.getElementById('admin-photo').value,
-                calories: parseInt(document.getElementById('admin-calories').value), ingredients: document.getElementById('admin-ingredients').value,
-                description: document.getElementById('admin-desc').value, isSpecial: document.getElementById('admin-special').checked
+                id: mealId, 
+                day: document.getElementById('admin-day').value, 
+                type: document.getElementById('admin-type').value,
+                name: document.getElementById('admin-name').value, 
+                photo: document.getElementById('admin-photo').value,
+                calories: parseInt(document.getElementById('admin-calories').value), 
+                ingredients: document.getElementById('admin-ingredients').value,
+                description: document.getElementById('admin-desc').value, 
+                isSpecial: document.getElementById('admin-special').checked
             };
-            globalMenu.push(newItem); localStorage.setItem('feelgood_menu', JSON.stringify(globalMenu));
-            selectedDay = newItem.day; renderDaysBar(); renderWeeklyMenu(); closeAdminMenu(); updateDashboardUI();
+
+            try {
+                // Guarda o actualiza en la colección "menu" de Firestore
+                await setDoc(doc(db, "menu", mealId.toString()), newItem);
+                
+                if (existingId) {
+                    const index = globalMenu.findIndex(m => m.id === mealId);
+                    if (index > -1) globalMenu[index] = newItem;
+                } else {
+                    globalMenu.push(newItem);
+                }
+                
+                selectedDay = newItem.day; 
+                renderDaysBar(); renderWeeklyMenu(); closeAdminMenu(); updateDashboardUI();
+            } catch (error) {
+                console.error("Error guardando platillo:", error);
+                alert("Hubo un error guardando el platillo en la nube.");
+            } finally {
+                btnSubmit.innerHTML = 'Guardar en el Menú';
+                btnSubmit.disabled = false;
+            }
         });
 
         // ADMIN VER USUARIOS (Llama a Firestore)
@@ -1049,9 +1121,20 @@
         });
 
         // Inicializar App
-        window.onload = () => {
+        window.onload = async () => {
             checkWeeklyReset();
-            const storedMenu = localStorage.getItem('feelgood_menu'); if (storedMenu) globalMenu = JSON.parse(storedMenu);
+            
+            // Cargar menú directamente desde Firestore (Nube)
+            try {
+                const menuSnapshot = await getDocs(collection(db, "menu"));
+                globalMenu = [];
+                menuSnapshot.forEach((doc) => {
+                    globalMenu.push(doc.data());
+                });
+            } catch (error) {
+                console.error("Error obteniendo el menú de Firestore:", error);
+            }
+
             const storedUser = localStorage.getItem('feelgood_user');
             if (storedUser) {
                 userProfile = JSON.parse(storedUser); loadUserMeals(); setupDashboardByRole();
