@@ -583,7 +583,7 @@
         document.getElementById('btn-back-login').addEventListener('click', () => showView('welcome'));
         document.getElementById('btn-back-register').addEventListener('click', () => showView('welcome'));
 
-        // Cambio de Roles
+        // CAMBIO DE ROLES
         document.getElementById('btn-role-socio').addEventListener('click', () => setRole('socio'));
         document.getElementById('btn-role-admin').addEventListener('click', () => setRole('admin'));
         function setRole(role) {
@@ -632,7 +632,8 @@
                 age: parseInt(document.getElementById('reg-age').value),
                 gender: document.getElementById('reg-gender').value,
                 activity: document.getElementById('reg-activity').value,
-                goal: document.getElementById('reg-goal').value
+                goal: document.getElementById('reg-goal').value,
+                dailyMeals: [] // Nuevo: Arreglo preparado para guardar los extras en la nube
             };
 
             const nutrition = calculateNutrition(profileData.weight, profileData.height, profileData.age, profileData.gender, profileData.activity, profileData.goal);
@@ -714,21 +715,27 @@
             setupDashboardByRole(); updateDashboardUI(); renderDaysBar(); renderWeeklyMenu(); showView('dashboard');
         });
 
-        // LÓGICA DE DASHBOARD
+        // LÓGICA DE DASHBOARD Y RESETEO
         function checkWeeklyReset() {
+            if (!userProfile) return;
             const now = new Date();
-            const lastReset = localStorage.getItem('feelgood_last_reset');
+            const lastReset = userProfile.lastReset || localStorage.getItem('feelgood_last_reset');
             let lastMonday2AM = new Date();
             lastMonday2AM.setDate(now.getDate() - ((now.getDay() + 6) % 7)); 
             lastMonday2AM.setHours(2, 0, 0, 0);
             if (now.getDay() === 1 && now.getHours() < 2) lastMonday2AM.setDate(lastMonday2AM.getDate() - 7);
             const lastResetTime = lastReset ? parseInt(lastReset) : 0;
+            
             if (lastResetTime > 0 && lastResetTime < lastMonday2AM.getTime() && now.getTime() >= lastMonday2AM.getTime()) {
                 dailyMeals = [];
-                localStorage.setItem('feelgood_user_meals', JSON.stringify(dailyMeals));
+                userProfile.dailyMeals = []; // Limpiamos en el perfil
+                userProfile.lastReset = now.getTime().toString();
                 localStorage.setItem('feelgood_last_reset', now.getTime().toString());
+                syncUserProfile(); // Guarda el reseteo en Firestore
             } else if (!lastReset) {
+                userProfile.lastReset = now.getTime().toString();
                 localStorage.setItem('feelgood_last_reset', now.getTime().toString());
+                syncUserProfile();
             }
         }
 
@@ -891,6 +898,9 @@
                 
                 selectedDay = newItem.day; 
                 renderDaysBar(); renderWeeklyMenu(); closeAdminMenu(); updateDashboardUI();
+                
+                // Confirmación visual
+                setTimeout(() => alert('¡Platillo guardado exitosamente en Firestore! ☁️'), 200);
             } catch (error) {
                 console.error("Error guardando platillo:", error);
                 alert("Hubo un error guardando el platillo en la nube.");
@@ -984,16 +994,40 @@
             }
         };
 
-        // EXTRAS Y UI DE DASHBOARD
-        function loadUserMeals() { dailyMeals = JSON.parse(localStorage.getItem('feelgood_user_meals') || '[]'); }
-
-        function saveUserMeal(meal) {
-            const index = dailyMeals.findIndex(m => m.id === meal.id);
-            if (index !== -1) dailyMeals[index] = meal; else dailyMeals.unshift(meal);
-            localStorage.setItem('feelgood_user_meals', JSON.stringify(dailyMeals)); updateDashboardUI();
+        // EXTRAS Y UI DE DASHBOARD - AHORA CONECTADO A FIRESTORE
+        async function syncUserProfile() {
+            if (!userProfile) return;
+            try {
+                // Guarda localmente como respaldo y luego obliga la subida a Firestore
+                localStorage.setItem('feelgood_user', JSON.stringify(userProfile));
+                await setDoc(doc(db, "users", userProfile.email), userProfile);
+            } catch(e) { 
+                console.error("Error sincronizando perfil en Firestore:", e); 
+            }
         }
 
-        window.deleteUserMeal = function(id) { dailyMeals = dailyMeals.filter(m => m.id !== id); localStorage.setItem('feelgood_user_meals', JSON.stringify(dailyMeals)); updateDashboardUI(); };
+        function loadUserMeals() { 
+            // Carga los extras registrados desde el perfil de Firestore
+            dailyMeals = userProfile.dailyMeals || []; 
+        }
+
+        window.saveUserMeal = async function(meal) {
+            const index = dailyMeals.findIndex(m => m.id === meal.id);
+            if (index !== -1) dailyMeals[index] = meal; else dailyMeals.unshift(meal);
+            userProfile.dailyMeals = dailyMeals;
+            updateDashboardUI();
+            await syncUserProfile(); // Dispara guardado a la nube
+        }
+
+        window.deleteUserMeal = async function(id) { 
+            if(confirm('¿Seguro que deseas eliminar este extra?')) {
+                dailyMeals = dailyMeals.filter(m => m.id !== id); 
+                userProfile.dailyMeals = dailyMeals;
+                updateDashboardUI(); 
+                await syncUserProfile(); // Actualiza la eliminación en la nube
+            }
+        };
+        
         window.editUserMeal = function(id) {
             const meal = dailyMeals.find(m => m.id === id);
             if (meal) { document.getElementById('meal-edit-id').value = meal.id; document.getElementById('meal-name').value = meal.name; document.getElementById('meal-calories').value = meal.calories; modals.addMeal.classList.remove('hidden'); }
@@ -1039,9 +1073,20 @@
         const closeAdd = () => { modals.addMeal.classList.add('hidden'); document.getElementById('form-add-meal').reset(); };
         document.getElementById('btn-close-add-meal').addEventListener('click', closeAdd); document.getElementById('bg-close-add-meal').addEventListener('click', closeAdd);
 
-        document.getElementById('form-add-meal').addEventListener('submit', (e) => {
+        document.getElementById('form-add-meal').addEventListener('submit', async (e) => {
             e.preventDefault();
-            saveUserMeal({ id: document.getElementById('meal-edit-id').value ? parseInt(document.getElementById('meal-edit-id').value) : Date.now(), day: selectedDay, name: document.getElementById('meal-name').value, calories: parseInt(document.getElementById('meal-calories').value) });
+            const btn = document.getElementById('btn-save-meal');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Guardando en la Nube...'; btn.disabled = true;
+            
+            await saveUserMeal({ 
+                id: document.getElementById('meal-edit-id').value ? parseInt(document.getElementById('meal-edit-id').value) : Date.now(), 
+                day: selectedDay, 
+                name: document.getElementById('meal-name').value, 
+                calories: parseInt(document.getElementById('meal-calories').value) 
+            });
+            
+            btn.innerHTML = originalText; btn.disabled = false;
             closeAdd();
         });
 
@@ -1122,9 +1167,7 @@
 
         // Inicializar App
         window.onload = async () => {
-            checkWeeklyReset();
-            
-            // Cargar menú directamente desde Firestore (Nube)
+            // 1. Cargar menú directamente desde Firestore (Nube)
             try {
                 const menuSnapshot = await getDocs(collection(db, "menu"));
                 globalMenu = [];
@@ -1135,11 +1178,34 @@
                 console.error("Error obteniendo el menú de Firestore:", error);
             }
 
+            // 2. Autenticar y cargar usuario desde Firestore (asegura datos más recientes)
             const storedUser = localStorage.getItem('feelgood_user');
             if (storedUser) {
-                userProfile = JSON.parse(storedUser); loadUserMeals(); setupDashboardByRole();
-                showView('dashboard'); updateDashboardUI(); renderDaysBar(); renderWeeklyMenu();
-            } else { showView('welcome'); }
+                const localUser = JSON.parse(storedUser);
+                try {
+                    // Refrescar datos desde la nube para estar 100% sincronizados
+                    const docSnap = await getDoc(doc(db, "users", localUser.email));
+                    if (docSnap.exists()) {
+                        userProfile = docSnap.data();
+                        localStorage.setItem('feelgood_user', JSON.stringify(userProfile));
+                    } else {
+                        userProfile = localUser;
+                    }
+                } catch(e) {
+                    console.error("Error de DB, usando caché local.");
+                    userProfile = localUser;
+                }
+                
+                checkWeeklyReset(); // Revisa y limpia extras los lunes a las 2 AM
+                loadUserMeals(); 
+                setupDashboardByRole();
+                showView('dashboard'); 
+                updateDashboardUI(); 
+                renderDaysBar(); 
+                renderWeeklyMenu();
+            } else { 
+                showView('welcome'); 
+            }
         };
     </script>
 </body>
