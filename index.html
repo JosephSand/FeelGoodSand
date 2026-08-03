@@ -7,226 +7,510 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        secondary: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .hidden { display: none !important; }
-        .menu-scroll { display: flex; overflow-x: auto; scroll-behavior: smooth; gap: 0.5rem; padding-bottom: 0.5rem; }
-        .menu-scroll::-webkit-scrollbar { height: 6px; }
-        .menu-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        body { font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-overlay { backdrop-filter: blur(4px); }
+        /* Hide scrollbar for clean UI but keep functionality */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-0 md:p-4">
 
-    <!-- VISTA: BIENVENIDA / LOGIN / REGISTRO -->
-    <div id="welcome-view" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-            <h1 class="text-3xl font-bold text-center text-blue-600 mb-2">Feel Good Sand Co.</h1>
-            <p class="text-center text-gray-500 mb-6">Tu vida saludable comienza aquí</p>
-            
-            <div id="auth-forms">
-                <!-- Selector de Acción -->
-                <div class="flex bg-gray-100 p-1 rounded-lg mb-6">
-                    <button onclick="toggleAuthMode('login')" id="btn-tab-login" class="flex-1 py-2 rounded-md font-medium bg-white shadow text-blue-600 transition-all">Iniciar Sesión</button>
-                    <button onclick="toggleAuthMode('register')" id="btn-tab-register" class="flex-1 py-2 rounded-md font-medium text-gray-500 hover:text-gray-700 transition-all">Registrarse</button>
-                </div>
-
-                <!-- Formulario Login -->
-                <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Correo</label>
-                        <input type="email" id="login-email" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Contraseña</label>
-                        <input type="password" id="login-password" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">Entrar</button>
-                </form>
-
-                <!-- Formulario Registro -->
-                <form id="register-form" class="space-y-4 hidden" onsubmit="handleRegister(event)">
-                    <!-- Selector de Rol -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Soy:</label>
-                        <select id="reg-role" onchange="checkAdminRole()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="socio">Socio</option>
-                            <option value="admin">Administrador</option>
-                        </select>
-                    </div>
-                    
-                    <div id="admin-code-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 text-red-500">Código de Administrador</label>
-                        <input type="password" id="reg-admin-code" placeholder="Ingrese el código secreto" class="mt-1 w-full p-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Nombre completo</label>
-                            <input type="text" id="reg-name" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Correo</label>
-                            <input type="email" id="reg-email" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Contraseña</label>
-                            <input type="password" id="reg-password" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Peso (lbs)</label>
-                            <input type="number" id="reg-weight" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Estatura (cm)</label>
-                            <input type="number" id="reg-height" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Edad</label>
-                            <input type="number" id="reg-age" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Género</label>
-                            <select id="reg-gender" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="m">Hombre</option>
-                                <option value="f">Mujer</option>
-                            </select>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Días de entreno a la semana</label>
-                            <select id="reg-activity" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="1.2">0 días (Sedentario)</option>
-                                <option value="1.375">1-3 días (Ligero)</option>
-                                <option value="1.55">3-5 días (Moderado)</option>
-                                <option value="1.725">6-7 días (Fuerte)</option>
-                            </select>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Objetivo</label>
-                            <select id="reg-goal" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="maintain">Mantener peso</option>
-                                <option value="lose">Perder peso (Déficit)</option>
-                                <option value="gain">Ganar masa muscular (Superávit)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors mt-6">Registrarse y Calcular</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- VISTA: DASHBOARD PRINCIPAL -->
-    <div id="dashboard-view" class="hidden min-h-screen pb-20">
-        <!-- Banner Modo Socio -->
-        <div id="partner-mode-banner" class="hidden bg-blue-500 text-white text-center py-1 text-xs font-bold tracking-widest uppercase">
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full h-full md:h-auto md:max-w-md bg-white md:rounded-3xl shadow-xl overflow-hidden relative flex flex-col min-h-screen md:min-h-[820px]">
+        
+        <!-- Admin Socio Mode Banner -->
+        <div id="socio-mode-banner" class="hidden bg-blue-600 text-white text-[10px] font-bold text-center py-1.5 uppercase tracking-widest z-50 transition-all shadow-md">
             Modo Socio Activo
         </div>
         
-        <!-- Header -->
-        <header class="bg-white shadow-sm p-4 sticky top-0 z-10 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-blue-600">Feel Good Sand</h1>
-            <div class="flex items-center gap-4 text-2xl text-gray-600">
-                <i class="ph ph-users hidden cursor-pointer" id="admin-users-btn" onclick="openUsersModal()"></i>
-                <i class="ph ph-cooking-pot hidden cursor-pointer" id="admin-pot-btn" onclick="openAdminMenu()"></i>
-                <i class="ph ph-eye hidden cursor-pointer" id="admin-view-btn" onclick="togglePartnerMode()"></i>
-                <i class="ph ph-plus-circle cursor-pointer text-green-600" onclick="openManualFood()"></i>
-                <i class="ph ph-user-circle cursor-pointer text-blue-600" onclick="openProfile()"></i>
+        <!-- Welcome View -->
+        <div id="welcome-view" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-primary-600 to-primary-800 animate-fade-in relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-10 -left-20 w-48 h-48 bg-primary-400/20 rounded-full blur-2xl"></div>
+            
+            <div class="z-10 w-full max-w-sm">
+                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-black/10">
+                    <i class="ph ph-leaf text-5xl text-primary-600"></i>
+                </div>
+                <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Feel Good<br>Sand Co.</h1>
+                <p class="text-primary-100 mb-10 text-sm font-medium">Tu vida saludable, organizada.</p>
+                
+                <div class="space-y-4">
+                    <button id="btn-go-login" class="w-full py-4 px-4 rounded-xl shadow-lg shadow-black/10 text-primary-900 font-bold bg-white hover:bg-gray-50 transition-colors">
+                        Iniciar Sesión
+                    </button>
+                    <button id="btn-go-register" class="w-full py-4 px-4 rounded-xl text-white font-bold bg-primary-700 hover:bg-primary-600 transition-colors border border-primary-500/50">
+                        Crear una Cuenta
+                    </button>
+                </div>
             </div>
-        </header>
+        </div>
 
-        <main class="p-4 max-w-2xl mx-auto space-y-6">
-            <!-- Tarjeta Calorías -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-end mb-4">
-                    <h2 class="text-lg font-semibold text-gray-700">Resumen de Hoy</h2>
-                    <div class="flex gap-2">
-                        <button onclick="openProgressModal()" class="text-blue-500 bg-blue-50 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                            <i class="ph ph-trend-up"></i> Progreso
-                        </button>
-                        <button onclick="alert('Historial Semanal Próximamente')" class="text-gray-500 bg-gray-100 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                            <i class="ph ph-clock-counter-clockwise"></i> Historial
-                        </button>
+        <!-- Login View -->
+        <div id="login-view" class="hidden flex-1 flex-col items-center justify-center p-8 text-center animate-fade-in relative">
+            <button id="btn-back-login" class="absolute top-6 left-6 text-gray-400 hover:text-gray-800"><i class="ph ph-arrow-left text-2xl"></i></button>
+            <h2 class="text-3xl font-black text-gray-800 mb-6">Iniciar Sesión</h2>
+            <form id="login-form" class="w-full max-w-sm space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Correo</label>
+                    <input type="email" id="login-email" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Contraseña</label>
+                    <input type="password" id="login-password" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all">
+                </div>
+                <p id="login-error-msg" class="hidden text-red-500 text-xs font-bold text-center">Credenciales incorrectas o usuario no encontrado.</p>
+                <button type="submit" id="btn-submit-login" class="w-full py-4 rounded-xl text-white font-bold bg-primary-600 hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/30 mt-4 flex justify-center items-center">
+                    <span>Entrar</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Registration View -->
+        <div id="registration-view" class="hidden flex-1 flex-col p-6 animate-fade-in overflow-y-auto hide-scrollbar relative">
+            <button id="btn-back-register" class="absolute top-6 left-6 text-gray-400 hover:text-gray-800 z-10"><i class="ph ph-arrow-left text-2xl"></i></button>
+            <h2 class="text-2xl font-black text-gray-800 text-center mb-6 mt-4">Crear Cuenta</h2>
+            
+            <div class="relative w-full max-w-sm mx-auto bg-gray-100 p-1 rounded-xl flex mb-6 shadow-inner">
+                <div id="role-bg" class="absolute w-1/2 h-[calc(100%-8px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-out left-1 top-1"></div>
+                <button id="btn-role-socio" type="button" class="flex-1 py-2 text-sm font-bold z-10 text-gray-800 transition-colors">Socio</button>
+                <button id="btn-role-admin" type="button" class="flex-1 py-2 text-sm font-bold z-10 text-gray-500 transition-colors">Admin</button>
+            </div>
+
+            <form id="register-form" class="w-full max-w-sm mx-auto space-y-4">
+                <div id="admin-code-container" class="hidden p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4">
+                    <label class="text-xs font-bold text-blue-600 uppercase">Código de Administrador</label>
+                    <input type="password" id="reg-admin-code" class="w-full p-3 mt-1 rounded-xl border border-blue-200 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
+                    <p id="admin-error-msg" class="hidden text-red-500 text-xs font-bold mt-2">Código incorrecto. Regístrate como Socio.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Nombre Completo</label>
+                        <input type="text" id="reg-name" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Correo Electrónico</label>
+                        <input type="email" id="reg-email" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Contraseña</label>
+                        <input type="password" id="reg-password" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
                     </div>
                 </div>
-                
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-3xl font-bold text-gray-800" id="dash-consumed">0</span>
-                    <span class="text-gray-400">/ <span id="dash-target">0</span> kcal</span>
-                </div>
-                
-                <div class="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
-                    <div id="dash-progress-bar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-                <p id="dash-status-text" class="text-sm text-gray-500 text-right">Quedan 0 kcal</p>
-            </div>
 
-            <!-- Menú Semanal -->
-            <div>
-                <h2 class="text-lg font-semibold text-gray-700 mb-3">Menú Semanal</h2>
-                <div class="menu-scroll mb-4" id="week-days-container">
-                    <!-- Los días se generan por JS -->
-                </div>
-                
-                <div id="daily-menu-container" class="space-y-4">
-                    <p class="text-gray-400 text-center py-6">Selecciona un día para ver el menú</p>
-                </div>
-            </div>
-
-            <!-- Extras y Cenas (Registros Manuales) -->
-            <div>
-                <h2 class="text-lg font-semibold text-gray-700 mb-3">Extras y Cenas</h2>
-                <div id="manual-foods-container" class="space-y-3">
-                    <!-- Comidas manuales se insertan aquí -->
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- MODAL: PERFIL -->
-    <div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">Mi Perfil</h2>
-                <i class="ph ph-x text-2xl cursor-pointer" onclick="closeModals()"></i>
-            </div>
-            
-            <form id="edit-profile-form" class="space-y-4" onsubmit="handleProfileUpdate(event)">
-                <!-- Mismos campos del registro para edición -->
+                <h3 class="font-bold text-gray-800 mt-6 mb-2 border-b pb-2">Datos Físicos (Requeridos)</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-600">Peso (lbs)</label>
-                        <input type="number" id="edit-weight" required class="w-full p-2 border rounded">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Peso (lbs)</label>
+                        <input type="number" id="reg-weight" required min="50" max="500" class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-600">Estatura (cm)</label>
-                        <input type="number" id="edit-height" required class="w-full p-2 border rounded">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Altura (cm)</label>
+                        <input type="number" id="reg-height" required min="100" max="250" class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm text-gray-600">Objetivo</label>
-                        <select id="edit-goal" class="w-full p-2 border rounded">
-                            <option value="maintain">Mantener peso</option>
-                            <option value="lose">Perder peso</option>
-                            <option value="gain">Ganar masa muscular</option>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Edad</label>
+                        <input type="number" id="reg-age" required min="12" max="100" class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Género</label>
+                        <select id="reg-gender" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                            <option value="male">Hombre</option>
+                            <option value="female">Mujer</option>
                         </select>
                     </div>
                 </div>
-                <div class="pt-4 border-t mt-4">
-                    <p class="text-center text-sm text-gray-500 mb-2">Meta Calórica Actualizada:</p>
-                    <p class="text-center text-2xl font-bold text-blue-600" id="profile-tdee-display">0 kcal</p>
+
+                <div class="space-y-4 mt-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Actividad Física</label>
+                        <select id="reg-activity" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                            <option value="1.2">Sedentario (Poco o ningún ejercicio)</option>
+                            <option value="1.375">Ligero (1-3 días a la semana)</option>
+                            <option value="1.55">Moderado (3-5 días a la semana)</option>
+                            <option value="1.725">Activo (6-7 días a la semana)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Objetivo</label>
+                        <select id="reg-goal" required class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                            <option value="maintain">Mantener Peso</option>
+                            <option value="lose">Perder Peso (Déficit)</option>
+                            <option value="gain">Ganar Masa (Superávit)</option>
+                        </select>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg mt-4">Guardar Cambios</button>
-                <button type="button" onclick="logout()" class="w-full bg-red-100 text-red-600 font-bold py-3 rounded-lg mt-2">Cerrar Sesión</button>
+
+                <button type="submit" id="btn-submit-register" class="w-full py-4 rounded-xl text-white font-bold bg-primary-600 hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/30 mt-6 mb-8 flex justify-center items-center">
+                    <span>Registrarse y Calcular</span>
+                </button>
             </form>
+        </div>
+
+        <!-- Results View -->
+        <div id="results-view" class="hidden flex-1 flex-col items-center justify-center p-8 text-center bg-primary-50 animate-fade-in relative">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white mb-6 shadow-xl shadow-green-500/30">
+                <i class="ph ph-check-bold text-4xl"></i>
+            </div>
+            <h2 id="res-greeting" class="text-2xl font-black text-gray-800 mb-2">¡Cálculo Exitoso!</h2>
+            <p class="text-gray-500 text-sm mb-8">Tus macros están configurados y guardados en la nube.</p>
+
+            <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 space-y-4">
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Meta Diaria (KCAL)</p>
+                    <p id="res-target" class="text-4xl font-black text-primary-600">--</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metabolismo Basal</p>
+                        <p id="res-bmr" class="text-sm font-bold text-gray-700">--</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Gasto Total (TDEE)</p>
+                        <p id="res-tdee" class="text-sm font-bold text-gray-700">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-continue" class="w-full max-w-sm py-4 rounded-xl text-white font-bold bg-gray-900 hover:bg-black transition-colors shadow-lg">Continuar al Dashboard</button>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="hidden flex-1 flex-col bg-gray-50 overflow-y-auto hide-scrollbar relative">
+            <!-- Header -->
+            <div class="bg-white p-5 rounded-b-3xl shadow-sm border-b border-gray-100 flex-shrink-0 z-10 sticky top-0">
+                <div class="flex justify-between items-center mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-600">
+                            <i class="ph ph-leaf-fill text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-black text-gray-800 leading-tight">Feel Good</h2>
+                            <span id="role-badge" class="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full inline-block">Socio</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-toggle-socio" class="hidden w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors" title="Modo Socio">
+                            <i class="ph ph-eye text-2xl"></i>
+                        </button>
+                        <button id="btn-admin-users" class="hidden w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" title="Usuarios">
+                            <i class="ph ph-users text-2xl"></i>
+                        </button>
+                        <button id="btn-admin-menu" class="hidden w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 hover:bg-orange-100 transition-colors" title="Crear Menú">
+                            <i class="ph ph-cooking-pot text-2xl"></i>
+                        </button>
+                        <button id="btn-add-meal" class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" title="Añadir Extra">
+                            <i class="ph ph-plus text-2xl"></i>
+                        </button>
+                        <button id="btn-profile" class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" title="Perfil">
+                            <i class="ph ph-user text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    <div class="flex justify-between items-end mb-4 relative z-10">
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Consumido (Kcal)</p>
+                            <p class="text-3xl font-black flex items-baseline gap-1"><span id="dash-consumed">0</span> <span class="text-sm font-medium text-gray-400">/ <span id="dash-target">2000</span></span></p>
+                        </div>
+                        <div class="text-right">
+                            <p id="dash-remaining" class="text-xs font-bold text-gray-400">Faltan: 2000 kcal</p>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-700/50 rounded-full h-2.5 overflow-hidden backdrop-blur-sm relative z-10">
+                        <div id="dash-progress-bar" class="bg-primary-500 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button id="btn-weight-progress" class="flex-1 bg-white/10 hover:bg-white/20 transition-colors rounded-xl py-2 px-3 text-xs font-bold flex items-center justify-center gap-2">
+                            <i class="ph ph-trend-up"></i> Progreso
+                        </button>
+                        <button id="btn-history" class="flex-1 bg-white/10 hover:bg-white/20 transition-colors rounded-xl py-2 px-3 text-xs font-bold flex items-center justify-center gap-2">
+                            <i class="ph ph-calendar-check"></i> Historial
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 p-5 space-y-6">
+                <!-- Weekly Menu Section -->
+                <section>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-gray-800">Menú Semanal</h3>
+                    </div>
+                    <div id="days-bar" class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-2">
+                        <!-- Days injected here -->
+                    </div>
+                    <div id="weekly-menu-list" class="space-y-4">
+                        <!-- Menu items injected here -->
+                    </div>
+                </section>
+
+                <!-- Daily Extras Section -->
+                <section>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-gray-800">Extras / Cenas (Hoy)</h3>
+                    </div>
+                    <div id="meals-list" class="space-y-3">
+                        <!-- Meals injected here -->
+                        <div id="empty-meals-msg" class="text-center p-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                            <i class="ph ph-pizza text-3xl text-gray-300 mb-2"></i>
+                            <p class="text-sm font-medium text-gray-500">Sin extras hoy.</p>
+                            <p class="text-xs text-gray-400 mt-1">Usa el botón + arriba para añadir.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Modal: Add Meal -->
+        <div id="modal-add-meal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div id="bg-close-add-meal" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
+            <div class="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] overflow-y-auto">
+                <button id="btn-close-add-meal" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
+                <h3 id="add-meal-title" class="text-xl font-black text-gray-800 mb-6">Añadir Extra</h3>
+                <form id="form-add-meal" class="space-y-4">
+                    <input type="hidden" id="meal-edit-id">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">¿Qué comiste?</label>
+                        <input type="text" id="meal-name" required placeholder="Ej. Taza de Cereal" class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Calorías Totales</label>
+                        <input type="number" id="meal-calories" required placeholder="Ej. 250" min="1" max="5000" class="w-full p-3 mt-1 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                    </div>
+                    <button type="submit" id="btn-save-meal" class="w-full py-3.5 rounded-xl text-white font-bold bg-primary-600 hover:bg-primary-700 transition-colors shadow-md shadow-primary-500/20 mt-2">Guardar Registro</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Admin Menu -->
+        <div id="modal-admin-menu" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div id="bg-close-admin-menu" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
+            <div class="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] overflow-y-auto">
+                <button id="btn-close-admin-menu" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
+                <h3 class="text-xl font-black text-orange-600 mb-4 flex items-center gap-2"><i class="ph ph-cooking-pot"></i> Crear Platillo</h3>
+                <form id="form-admin-menu" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase">Día</label>
+                            <select id="admin-day" required class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm">
+                                <option value="Lunes">Lunes</option>
+                                <option value="Martes">Martes</option>
+                                <option value="Miércoles">Miércoles</option>
+                                <option value="Jueves">Jueves</option>
+                                <option value="Viernes">Viernes</option>
+                                <option value="Sábado">Sábado</option>
+                                <option value="Domingo">Domingo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase">Tipo</label>
+                            <select id="admin-type" required class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm">
+                                <option value="Desayuno">Desayuno</option>
+                                <option value="Refrigerio Mañana">Refri. Mañana</option>
+                                <option value="Almuerzo">Almuerzo</option>
+                                <option value="Refrigerio Tarde">Refri. Tarde</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Nombre del Platillo</label>
+                        <input type="text" id="admin-name" required placeholder="Ej. Bowl de Avena" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">URL de Fotografía</label>
+                        <input type="url" id="admin-photo" placeholder="https://..." class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Calorías Estimadas</label>
+                        <input type="number" id="admin-calories" required min="1" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Ingredientes (Opcional)</label>
+                        <textarea id="admin-ingredients" rows="2" placeholder="Ej. Avena, Leche, Plátano" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Descripción (Opcional)</label>
+                        <textarea id="admin-desc" rows="2" placeholder="Breve descripción del plato" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-orange-500 text-sm"></textarea>
+                    </div>
+                    <div class="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-yellow-50 p-3 rounded-lg border border-orange-100 mt-2">
+                        <input type="checkbox" id="admin-special" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500">
+                        <label for="admin-special" class="text-xs font-bold text-orange-800">Marcar como Edición Especial 🌟</label>
+                    </div>
+                    <button type="submit" class="w-full py-3.5 rounded-xl text-white font-bold bg-orange-600 hover:bg-orange-700 transition-colors shadow-md shadow-orange-500/20 mt-4">Guardar en el Menú</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Admin Users -->
+        <div id="modal-admin-users" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div id="bg-close-admin-users" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
+            <div class="relative bg-gray-100 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] flex flex-col h-[80vh]">
+                <button id="btn-close-admin-users" class="absolute top-4 right-4 w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 shadow-sm z-10"><i class="ph ph-x"></i></button>
+                <h3 class="text-xl font-black text-blue-600 mb-4 flex items-center gap-2"><i class="ph ph-users"></i> Base de Datos</h3>
+                
+                <div id="admin-users-list" class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pb-6">
+                    <!-- Users injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: History -->
+        <div id="modal-history" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div id="bg-close-history" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
+            <div class="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] overflow-y-auto">
+                <button id="btn-close-history" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
+                <h3 class="text-xl font-black text-gray-800 mb-2">Historial Semanal</h3>
+                <p class="text-xs text-gray-500 mb-6">Suma del menú asignado + extras registrados</p>
+                
+                <div id="history-list" class="space-y-3">
+                    <!-- History injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Weight Progress -->
+        <div id="modal-weight-progress" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div id="bg-close-weight-progress" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
+            <div class="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] flex flex-col">
+                <button id="btn-close-weight-progress" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 z-10"><i class="ph ph-x"></i></button>
+                <h3 class="text-xl font-black text-gray-800 mb-2">Progreso de Peso</h3>
+                <p id="weight-trend-msg" class="text-sm text-gray-500 mb-6 bg-gray-50 p-3 rounded-lg border border-gray-100">Cargando progreso...</p>
+                
+                <div class="w-full h-64 mb-6 relative">
+                    <canvas id="weightChart"></canvas>
+                </div>
+                
+                <button id="btn-log-weight" class="w-full py-3.5 rounded-xl text-primary-700 font-bold bg-primary-50 border border-primary-200 hover:bg-primary-100 transition-colors shadow-sm mt-auto">Registrar Peso de Hoy</button>
+            </div>
+        </div>
+
+        <!-- Modal: Log Weight -->
+        <div id="modal-log-weight" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div id="bg-close-log-weight" class="absolute inset-0 bg-gray-900/60 transition-opacity"></div>
+            <div class="relative bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto text-center">
+                <button id="btn-close-log-weight" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><i class="ph ph-x"></i></button>
+                <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 mx-auto mb-4">
+                    <i class="ph ph-scales text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-black text-gray-800 mb-1">Tu peso hoy</h3>
+                <p class="text-xs text-gray-500 mb-6">Actualizaremos tus calorías diarias si es necesario.</p>
+                
+                <form id="form-log-weight">
+                    <div class="relative w-32 mx-auto mb-6">
+                        <input type="number" id="new-weight-input" required step="0.1" class="w-full text-center text-3xl font-black text-gray-800 border-b-2 border-primary-500 focus:outline-none focus:border-primary-700 pb-2">
+                        <span class="absolute right-0 bottom-2 text-gray-400 font-bold">Lbs</span>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl text-white font-bold bg-primary-600 hover:bg-primary-700 transition-colors shadow-md">Guardar Registro</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Profile -->
+        <div id="modal-edit-profile" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div id="bg-close-edit-profile" class="absolute inset-0 bg-gray-900/40 modal-overlay transition-opacity"></div>
+            <div class="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-fade-in mx-auto mt-auto sm:mt-0 max-h-[90vh] overflow-y-auto hide-scrollbar">
+                <button id="btn-close-edit-profile" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
+                <h3 class="text-xl font-black text-gray-800 mb-6">Mi Perfil</h3>
+                <form id="form-edit-profile" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase">Peso (lbs)</label>
+                            <input type="number" id="edit-weight" required min="50" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase">Altura (cm)</label>
+                            <input type="number" id="edit-height" required min="100" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase">Edad</label>
+                            <input type="number" id="edit-age" required min="12" class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase">Género</label>
+                            <select id="edit-gender" required class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                                <option value="male">Hombre</option>
+                                <option value="female">Mujer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Actividad Física</label>
+                        <select id="edit-activity" required class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                            <option value="1.2">Sedentario (Poco o ninguno)</option>
+                            <option value="1.375">Ligero (1-3 días)</option>
+                            <option value="1.55">Moderado (3-5 días)</option>
+                            <option value="1.725">Activo (6-7 días)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Objetivo</label>
+                        <select id="edit-goal" required class="w-full p-2.5 mt-1 rounded-lg border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-primary-500">
+                            <option value="maintain">Mantener Peso</option>
+                            <option value="lose">Perder Peso (Déficit)</option>
+                            <option value="gain">Ganar Masa (Superávit)</option>
+                        </select>
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" id="btn-save-profile" class="w-full py-3.5 rounded-xl text-white font-bold bg-primary-600 hover:bg-primary-700 transition-colors shadow-md shadow-primary-500/20 mb-3">Actualizar Datos</button>
+                        <button type="button" id="btn-logout" class="w-full py-3.5 rounded-xl text-red-600 font-bold bg-red-50 hover:bg-red-100 transition-colors border border-red-100">Cerrar Sesión</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- Firebase SDK (Firestore Integration) -->
+    <!-- Firebase e Inicialización de Scripts -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        // --- STREAMING_CHUNK:Configurando Base de Datos ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Tu configuración real de Firebase
+        // Configuración exacta proveída
         const firebaseConfig = {
             apiKey: "AIzaSyDuB802fhdy0sxj4Ko1k1ZkTAz5-j-AtMw",
             authDomain: "feel-good-sand-company.firebaseapp.com",
@@ -241,116 +525,539 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
-        // Funciones conectadas a Firestore para la aplicación global
-        window.saveDataDB = async function(data) {
-            try {
-                await setDoc(doc(db, "users", data.email), data);
-                console.log("¡Datos de usuario guardados en Firestore exitosamente!");
-            } catch (e) {
-                console.error("Error al guardar en Firestore: ", e);
-            }
+        // --- ESTADO DE LA APLICACIÓN ---
+        let userProfile = null;
+        let usersDB = []; 
+        let dailyMeals = []; 
+        let globalMenu = []; 
+        let selectedRole = 'socio';
+        let selectedDay = 'Lunes';
+        let isSocioMode = false;
+        let weightChartInstance = null;
+        const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+        // Elementos UI
+        const views = {
+            welcome: document.getElementById('welcome-view'),
+            login: document.getElementById('login-view'),
+            registration: document.getElementById('registration-view'),
+            results: document.getElementById('results-view'),
+            dashboard: document.getElementById('dashboard-view')
+        };
+        const modals = {
+            addMeal: document.getElementById('modal-add-meal'),
+            editProfile: document.getElementById('modal-edit-profile'),
+            adminMenu: document.getElementById('modal-admin-menu'),
+            history: document.getElementById('modal-history'),
+            weightProgress: document.getElementById('modal-weight-progress')
         };
 
-        window.loadDataDB = async function(email) {
-            try {
-                const docRef = doc(db, "users", email);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    return docSnap.data();
-                } else {
-                    return null;
-                }
-            } catch (e) {
-                console.error("Error al leer desde Firestore: ", e);
-                return null;
-            }
-        };
+        // Función Matemática de Calorías
+        function calculateNutrition(weightLbs, heightCm, age, gender, activityLevel, goal) {
+            const weightKg = weightLbs / 2.20462;
+            let bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+            bmr = gender === 'male' ? bmr + 5 : bmr - 161;
+            const tdee = bmr * parseFloat(activityLevel);
+            let target = tdee;
+            if (goal === 'lose') target -= 500;
+            else if (goal === 'gain') target += 500;
+            
+            if (gender === 'male' && target < 1500) target = 1500;
+            if (gender === 'female' && target < 1200) target = 1200;
+            return { bmr: Math.round(bmr), tdee: Math.round(tdee), target: Math.round(target) };
+        }
 
-        // El resto de la lógica Javascript para manejar UI
-        // (Debido a restricciones de espacio, aquí se incluiría todo el JS de cálculo
-        // de TDEE, manejo de modales, Chart.js, etc. que ya teníamos funcionales).
+        // Mostrar Vistas
+        function showView(viewName) {
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+            views[viewName].classList.remove('hidden');
+            views[viewName].classList.add('flex');
+        }
 
-        window.toggleAuthMode = function(mode) {
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const btnLogin = document.getElementById('btn-tab-login');
-            const btnRegister = document.getElementById('btn-tab-register');
+        // Navegación Básica
+        document.getElementById('btn-go-login').addEventListener('click', () => showView('login'));
+        document.getElementById('btn-go-register').addEventListener('click', () => {
+            setRole('socio'); document.getElementById('register-form').reset(); showView('registration');
+        });
+        document.getElementById('btn-back-login').addEventListener('click', () => showView('welcome'));
+        document.getElementById('btn-back-register').addEventListener('click', () => showView('welcome'));
 
-            if (mode === 'login') {
-                loginForm.classList.remove('hidden');
-                registerForm.classList.add('hidden');
-                btnLogin.classList.add('bg-white', 'shadow', 'text-blue-600');
-                btnLogin.classList.remove('text-gray-500');
-                btnRegister.classList.remove('bg-white', 'shadow', 'text-blue-600');
-                btnRegister.classList.add('text-gray-500');
+        // Cambio de Roles
+        document.getElementById('btn-role-socio').addEventListener('click', () => setRole('socio'));
+        document.getElementById('btn-role-admin').addEventListener('click', () => setRole('admin'));
+        function setRole(role) {
+            selectedRole = role;
+            const bg = document.getElementById('role-bg');
+            const btnSocio = document.getElementById('btn-role-socio');
+            const btnAdmin = document.getElementById('btn-role-admin');
+            const adminCode = document.getElementById('admin-code-container');
+            if (role === 'socio') {
+                bg.style.transform = 'translateX(0)';
+                btnSocio.classList.replace('text-gray-500', 'text-gray-800');
+                btnAdmin.classList.replace('text-gray-800', 'text-gray-500');
+                adminCode.classList.add('hidden');
             } else {
-                loginForm.classList.add('hidden');
-                registerForm.classList.remove('hidden');
-                btnRegister.classList.add('bg-white', 'shadow', 'text-blue-600');
-                btnRegister.classList.remove('text-gray-500');
-                btnLogin.classList.remove('bg-white', 'shadow', 'text-blue-600');
-                btnLogin.classList.add('text-gray-500');
+                bg.style.transform = 'translateX(100%)';
+                btnAdmin.classList.replace('text-gray-500', 'text-gray-800');
+                btnSocio.classList.replace('text-gray-800', 'text-gray-500');
+                adminCode.classList.remove('hidden');
             }
-        };
+        }
 
-        window.checkAdminRole = function() {
-            const role = document.getElementById('reg-role').value;
-            const codeContainer = document.getElementById('admin-code-container');
-            if (role === 'admin') {
-                codeContainer.classList.remove('hidden');
-            } else {
-                codeContainer.classList.add('hidden');
-            }
-        };
+        // --- FUNCIONES CONECTADAS A FIRESTORE ---
 
-        window.handleRegister = async function(e) {
+        // REGISTRO
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const role = document.getElementById('reg-role').value;
-            if (role === 'admin') {
-                const code = document.getElementById('reg-admin-code').value;
-                if (code !== 'Tauro!996') {
-                    alert('Código de administrador incorrecto. Regístrate como socio.');
-                    return;
-                }
+            const btnSubmit = document.getElementById('btn-submit-register');
+            btnSubmit.innerHTML = 'Guardando en la Nube...';
+            btnSubmit.disabled = true;
+
+            if (selectedRole === 'admin' && document.getElementById('reg-admin-code').value !== 'Tauro!996') {
+                document.getElementById('admin-error-msg').classList.remove('hidden');
+                btnSubmit.innerHTML = 'Registrarse y Calcular';
+                btnSubmit.disabled = false;
+                return; 
             }
-
-            const weight = parseFloat(document.getElementById('reg-weight').value);
-            const height = parseFloat(document.getElementById('reg-height').value);
-            const age = parseInt(document.getElementById('reg-age').value);
-            const gender = document.getElementById('reg-gender').value;
-            const activity = parseFloat(document.getElementById('reg-activity').value);
-            const goal = document.getElementById('reg-goal').value;
-
-            // Calculo de calorías (Mifflin-St Jeor)
-            const weightKg = weight * 0.453592;
-            let bmr = (10 * weightKg) + (6.25 * height) - (5 * age);
-            bmr = gender === 'm' ? bmr + 5 : bmr - 161;
             
-            let tdee = bmr * activity;
-            if (goal === 'lose') tdee -= 500;
-            if (goal === 'gain') tdee += 500;
-            
-            const userData = {
+            const profileData = {
+                id: Date.now(), 
+                role: selectedRole,
                 name: document.getElementById('reg-name').value,
-                email: document.getElementById('reg-email').value,
-                role: role,
-                weight: weight,
-                height: height,
-                age: age,
-                gender: gender,
-                activity: activity,
-                goal: goal,
-                targetCalories: Math.round(tdee)
+                email: document.getElementById('reg-email').value.toLowerCase().trim(),
+                password: document.getElementById('reg-password').value,
+                weight: parseFloat(document.getElementById('reg-weight').value),
+                height: parseFloat(document.getElementById('reg-height').value),
+                age: parseInt(document.getElementById('reg-age').value),
+                gender: document.getElementById('reg-gender').value,
+                activity: document.getElementById('reg-activity').value,
+                goal: document.getElementById('reg-goal').value
             };
 
-            await window.saveDataDB(userData);
-            alert('¡Registro Exitoso! Tu meta es de ' + Math.round(tdee) + ' kcal.');
+            const nutrition = calculateNutrition(profileData.weight, profileData.height, profileData.age, profileData.gender, profileData.activity, profileData.goal);
+            const weightHistory = [{ date: new Date().toISOString().split('T')[0], weight: profileData.weight }];
             
-            // Navegar al Dashboard
-            document.getElementById('welcome-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
+            userProfile = { ...profileData, nutrition, weightHistory };
+
+            try {
+                // Guarda en FIRESTORE
+                await setDoc(doc(db, "users", userProfile.email), userProfile);
+                
+                // Mantiene copia local para velocidad
+                localStorage.setItem('feelgood_user', JSON.stringify(userProfile));
+
+                document.getElementById('res-greeting').textContent = `${profileData.name.split(' ')[0]}, tus macros están listos.`;
+                document.getElementById('res-target').textContent = nutrition.target.toLocaleString();
+                document.getElementById('res-bmr').textContent = `${nutrition.bmr.toLocaleString()} kcal`;
+                document.getElementById('res-tdee').textContent = `${nutrition.tdee.toLocaleString()} kcal`;
+                showView('results');
+            } catch (error) {
+                console.error("Error guardando:", error);
+                alert("Hubo un error conectando a la base de datos.");
+            } finally {
+                btnSubmit.innerHTML = 'Registrarse y Calcular';
+                btnSubmit.disabled = false;
+            }
+        });
+
+        // LOGIN
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnSubmit = document.getElementById('btn-submit-login');
+            btnSubmit.innerHTML = 'Conectando...';
+            btnSubmit.disabled = true;
+
+            const email = document.getElementById('login-email').value.toLowerCase().trim();
+            const pass = document.getElementById('login-password').value;
+            const errorMsg = document.getElementById('login-error-msg');
+            
+            try {
+                // Leer desde FIRESTORE
+                const docSnap = await getDoc(doc(db, "users", email));
+                
+                if (docSnap.exists() && docSnap.data().password === pass) {
+                    errorMsg.classList.add('hidden');
+                    userProfile = docSnap.data();
+                    localStorage.setItem('feelgood_user', JSON.stringify(userProfile));
+                    
+                    loadUserMeals();
+                    setupDashboardByRole();
+                    showView('dashboard');
+                    updateDashboardUI();
+                    renderDaysBar();
+                    renderWeeklyMenu();
+                } else {
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error de login:", error);
+                errorMsg.textContent = "Error al conectar con la base de datos.";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btnSubmit.innerHTML = 'Entrar';
+                btnSubmit.disabled = false;
+            }
+        });
+
+        // CONTINUAR AL DASHBOARD
+        document.getElementById('btn-continue').addEventListener('click', () => {
+            setupDashboardByRole(); updateDashboardUI(); renderDaysBar(); renderWeeklyMenu(); showView('dashboard');
+        });
+
+        // LÓGICA DE DASHBOARD
+        function checkWeeklyReset() {
+            const now = new Date();
+            const lastReset = localStorage.getItem('feelgood_last_reset');
+            let lastMonday2AM = new Date();
+            lastMonday2AM.setDate(now.getDate() - ((now.getDay() + 6) % 7)); 
+            lastMonday2AM.setHours(2, 0, 0, 0);
+            if (now.getDay() === 1 && now.getHours() < 2) lastMonday2AM.setDate(lastMonday2AM.getDate() - 7);
+            const lastResetTime = lastReset ? parseInt(lastReset) : 0;
+            if (lastResetTime > 0 && lastResetTime < lastMonday2AM.getTime() && now.getTime() >= lastMonday2AM.getTime()) {
+                dailyMeals = [];
+                localStorage.setItem('feelgood_user_meals', JSON.stringify(dailyMeals));
+                localStorage.setItem('feelgood_last_reset', now.getTime().toString());
+            } else if (!lastReset) {
+                localStorage.setItem('feelgood_last_reset', now.getTime().toString());
+            }
+        }
+
+        document.getElementById('btn-toggle-socio').addEventListener('click', () => {
+            isSocioMode = !isSocioMode; setupDashboardByRole(); updateDashboardUI(); renderWeeklyMenu();
+        });
+        
+        function setupDashboardByRole() {
+            if (!userProfile) return;
+            const btnAdmin = document.getElementById('btn-admin-menu');
+            const btnAdminUsers = document.getElementById('btn-admin-users');
+            const btnToggleSocio = document.getElementById('btn-toggle-socio');
+            const roleBadge = document.getElementById('role-badge');
+            const banner = document.getElementById('socio-mode-banner');
+            
+            if (userProfile.role === 'admin') {
+                btnToggleSocio.classList.remove('hidden');
+                if (isSocioMode) {
+                    btnAdmin.classList.add('hidden'); btnAdminUsers.classList.add('hidden'); banner.classList.remove('hidden');
+                    roleBadge.textContent = 'Admin (Modo Socio)';
+                    roleBadge.classList.replace('bg-orange-100', 'bg-blue-100'); roleBadge.classList.replace('text-orange-600', 'text-blue-600');
+                    btnToggleSocio.innerHTML = '<i class="ph ph-eye-slash text-2xl"></i>';
+                } else {
+                    btnAdmin.classList.remove('hidden'); btnAdminUsers.classList.remove('hidden'); banner.classList.add('hidden');
+                    roleBadge.textContent = 'Admin';
+                    roleBadge.classList.replace('bg-blue-100', 'bg-orange-100'); roleBadge.classList.replace('bg-gray-100', 'bg-orange-100');
+                    roleBadge.classList.replace('text-blue-600', 'text-orange-600'); roleBadge.classList.replace('text-gray-500', 'text-orange-600');
+                    btnToggleSocio.innerHTML = '<i class="ph ph-eye text-2xl"></i>';
+                }
+            } else {
+                btnAdmin.classList.add('hidden'); btnAdminUsers.classList.add('hidden'); btnToggleSocio.classList.add('hidden'); banner.classList.add('hidden');
+                roleBadge.textContent = 'Socio';
+                roleBadge.classList.replace('bg-orange-100', 'bg-gray-100'); roleBadge.classList.replace('bg-blue-100', 'bg-gray-100');
+                roleBadge.classList.replace('text-orange-600', 'text-gray-500'); roleBadge.classList.replace('text-blue-600', 'text-gray-500');
+            }
+        }
+
+        // MENÚ SEMANAL E INTERFAZ
+        function renderDaysBar() {
+            const container = document.getElementById('days-bar');
+            let html = '';
+            daysOfWeek.forEach(day => {
+                const isActive = day === selectedDay;
+                const activeClass = isActive ? "bg-primary-600 text-white shadow-md shadow-primary-500/20" : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100";
+                html += `<button onclick="window.selectDay('${day}')" class="flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-colors ${activeClass}">${day}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.selectDay = function(day) { selectedDay = day; renderDaysBar(); renderWeeklyMenu(); updateDashboardUI(); }
+
+        function renderWeeklyMenu() {
+            const container = document.getElementById('weekly-menu-list');
+            const mealsForDay = globalMenu.filter(m => m.day === selectedDay);
+            
+            if (mealsForDay.length === 0) {
+                container.innerHTML = `<div class="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100 border-dashed"><i class="ph ph-calendar-blank text-3xl text-gray-300 mb-2"></i><p class="text-sm font-medium text-gray-500">No hay platillos para este día.</p></div>`;
+                return;
+            }
+
+            let html = '';
+            const order = { 'Desayuno': 1, 'Refrigerio Mañana': 2, 'Almuerzo': 3, 'Refrigerio Tarde': 4 };
+            mealsForDay.sort((a, b) => order[a.type] - order[b.type]).forEach(meal => {
+                const imgTag = meal.photo ? `<img src="${meal.photo}" class="w-full h-32 object-cover" alt="Foto">` : `<div class="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400"><i class="ph ph-image text-3xl"></i></div>`;
+                const specialBadge = meal.isSpecial ? `<div class="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-yellow-500 text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md z-10"><i class="ph-fill ph-star"></i> Especial</div>` : '';
+                const deleteBtn = (userProfile.role === 'admin' && !isSocioMode) ? `<button onclick="deleteMenuMeal(${meal.id})" class="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"><i class="ph ph-trash"></i></button>` : '';
+
+                html += `
+                    <div class="relative bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all">
+                        ${specialBadge} ${imgTag}
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div><p class="text-[10px] text-primary-600 font-bold uppercase tracking-wider">${meal.type}</p><h4 class="font-bold text-gray-800 text-lg leading-tight mt-0.5">${meal.name}</h4></div>
+                                <div class="flex items-center gap-2"><span class="bg-gray-50 text-gray-700 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">${meal.calories} kcal</span>${deleteBtn}</div>
+                            </div>
+                            ${meal.ingredients ? `<p class="text-xs text-gray-500 mt-2"><span class="font-semibold text-gray-700">Ingredientes:</span> ${meal.ingredients}</p>` : ''}
+                            ${meal.description ? `<p class="text-xs text-gray-400 mt-1 italic">${meal.description}</p>` : ''}
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.deleteMenuMeal = function(id) {
+            if(confirm('¿Eliminar platillo?')) {
+                globalMenu = globalMenu.filter(m => m.id !== id);
+                localStorage.setItem('feelgood_menu', JSON.stringify(globalMenu));
+                renderWeeklyMenu(); updateDashboardUI();
+            }
         };
 
+        // ADMIN CREAR MENÚ
+        document.getElementById('btn-admin-menu').addEventListener('click', () => { document.getElementById('admin-day').value = selectedDay; modals.adminMenu.classList.remove('hidden'); });
+        const closeAdminMenu = () => { modals.adminMenu.classList.add('hidden'); document.getElementById('form-admin-menu').reset(); };
+        document.getElementById('btn-close-admin-menu').addEventListener('click', closeAdminMenu);
+        document.getElementById('bg-close-admin-menu').addEventListener('click', closeAdminMenu);
+
+        document.getElementById('form-admin-menu').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(), day: document.getElementById('admin-day').value, type: document.getElementById('admin-type').value,
+                name: document.getElementById('admin-name').value, photo: document.getElementById('admin-photo').value,
+                calories: parseInt(document.getElementById('admin-calories').value), ingredients: document.getElementById('admin-ingredients').value,
+                description: document.getElementById('admin-desc').value, isSpecial: document.getElementById('admin-special').checked
+            };
+            globalMenu.push(newItem); localStorage.setItem('feelgood_menu', JSON.stringify(globalMenu));
+            selectedDay = newItem.day; renderDaysBar(); renderWeeklyMenu(); closeAdminMenu(); updateDashboardUI();
+        });
+
+        // ADMIN VER USUARIOS (Llama a Firestore)
+        const modalAdminUsers = document.getElementById('modal-admin-users');
+        document.getElementById('btn-admin-users').addEventListener('click', async () => {
+            modalAdminUsers.classList.remove('hidden');
+            document.getElementById('admin-users-list').innerHTML = '<p class="text-center text-gray-500 mt-10">Cargando base de datos...</p>';
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                usersDB = [];
+                querySnapshot.forEach((doc) => { usersDB.push(doc.data()); });
+                renderAdminUsersList();
+            } catch(e) {
+                console.error(e);
+                document.getElementById('admin-users-list').innerHTML = '<p class="text-center text-red-500 mt-10">Error cargando usuarios.</p>';
+            }
+        });
+
+        const closeAdminUsers = () => modalAdminUsers.classList.add('hidden');
+        document.getElementById('btn-close-admin-users').addEventListener('click', closeAdminUsers);
+        document.getElementById('bg-close-admin-users').addEventListener('click', closeAdminUsers);
+
+        function renderAdminUsersList() {
+            const container = document.getElementById('admin-users-list');
+            if (usersDB.length === 0) { container.innerHTML = '<p class="text-center text-gray-500 mt-10">No hay usuarios.</p>'; return; }
+            let html = '';
+            usersDB.forEach(u => {
+                html += `
+                <div class="border border-gray-200 rounded-xl mb-3 overflow-hidden bg-white shadow-sm">
+                    <button onclick="toggleUserAccordion(${u.id})" class="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50">
+                        <div><span class="font-bold text-gray-800 block">${u.name}</span><span class="text-[10px] font-bold uppercase text-gray-400">${u.role}</span></div>
+                        <i class="ph ph-caret-down text-gray-400 transition-transform" id="icon-user-${u.id}"></i>
+                    </button>
+                    <div id="content-user-${u.id}" class="hidden p-4 border-t border-gray-100 text-sm bg-gray-50/50">
+                        <div class="grid grid-cols-2 gap-x-2 gap-y-3 text-xs text-gray-600 mb-5 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <p class="flex flex-col"><span class="font-bold text-gray-400 uppercase text-[9px]">Peso</span> <span class="font-semibold text-gray-800">${u.weight} lbs</span></p>
+                            <p class="flex flex-col"><span class="font-bold text-gray-400 uppercase text-[9px]">Estatura</span> <span class="font-semibold text-gray-800">${u.height} cm</span></p>
+                            <p class="flex flex-col col-span-2"><span class="font-bold text-gray-400 uppercase text-[9px]">Meta (Kcal)</span> <span class="font-black text-primary-600 text-base">${u.nutrition.target} kcal</span></p>
+                        </div>
+                        <div class="space-y-3 mb-4">
+                            <div><label class="text-[10px] font-bold text-gray-500 uppercase block">Correo</label><input type="email" id="edit-email-${u.id}" value="${u.email}" class="w-full p-2 border rounded-lg outline-none bg-white"></div>
+                            <div><label class="text-[10px] font-bold text-gray-500 uppercase block">Contraseña</label><input type="text" id="edit-pass-${u.id}" value="${u.password}" class="w-full p-2 border rounded-lg outline-none bg-white"></div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="updateUserCredentials('${u.email}', ${u.id})" class="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl text-xs">Guardar Cambios</button>
+                            <button onclick="deleteUserProfile('${u.email}')" class="px-4 bg-red-50 text-red-600 font-bold rounded-xl text-xs"><i class="ph ph-trash text-base"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.toggleUserAccordion = function(id) {
+            const content = document.getElementById(`content-user-${id}`);
+            const icon = document.getElementById(`icon-user-${id}`);
+            if (content.classList.contains('hidden')) { content.classList.remove('hidden'); icon.style.transform = 'rotate(180deg)'; }
+            else { content.classList.add('hidden'); icon.style.transform = 'rotate(0deg)'; }
+        };
+
+        window.updateUserCredentials = async function(email, id) {
+            const newEmail = document.getElementById(`edit-email-${id}`).value;
+            const newPass = document.getElementById(`edit-pass-${id}`).value;
+            
+            const userIndex = usersDB.findIndex(u => u.email === email);
+            if (userIndex > -1) {
+                usersDB[userIndex].email = newEmail;
+                usersDB[userIndex].password = newPass;
+                try {
+                    await setDoc(doc(db, "users", email), usersDB[userIndex]);
+                    alert("Cambios guardados en la nube.");
+                } catch(e) { console.error(e); }
+            }
+        };
+
+        window.deleteUserProfile = async function(email) {
+            if(confirm('¿Eliminar permanente a este usuario de Firestore?')) {
+                try {
+                    await deleteDoc(doc(db, "users", email));
+                    usersDB = usersDB.filter(u => u.email !== email);
+                    renderAdminUsersList();
+                } catch(e) { console.error(e); }
+            }
+        };
+
+        // EXTRAS Y UI DE DASHBOARD
+        function loadUserMeals() { dailyMeals = JSON.parse(localStorage.getItem('feelgood_user_meals') || '[]'); }
+
+        function saveUserMeal(meal) {
+            const index = dailyMeals.findIndex(m => m.id === meal.id);
+            if (index !== -1) dailyMeals[index] = meal; else dailyMeals.unshift(meal);
+            localStorage.setItem('feelgood_user_meals', JSON.stringify(dailyMeals)); updateDashboardUI();
+        }
+
+        window.deleteUserMeal = function(id) { dailyMeals = dailyMeals.filter(m => m.id !== id); localStorage.setItem('feelgood_user_meals', JSON.stringify(dailyMeals)); updateDashboardUI(); };
+        window.editUserMeal = function(id) {
+            const meal = dailyMeals.find(m => m.id === id);
+            if (meal) { document.getElementById('meal-edit-id').value = meal.id; document.getElementById('meal-name').value = meal.name; document.getElementById('meal-calories').value = meal.calories; modals.addMeal.classList.remove('hidden'); }
+        };
+
+        function updateDashboardUI() {
+            if (!userProfile) return;
+            let consumed = 0; let mealsHtml = '';
+            
+            globalMenu.filter(m => m.day === selectedDay).forEach(m => consumed += m.calories);
+            const extrasForDay = dailyMeals.filter(m => m.day === selectedDay);
+
+            if (extrasForDay.length === 0) { document.getElementById('empty-meals-msg').classList.remove('hidden'); } 
+            else {
+                document.getElementById('empty-meals-msg').classList.add('hidden');
+                extrasForDay.forEach(meal => {
+                    consumed += meal.calories;
+                    mealsHtml += `
+                        <div class="flex justify-between items-center p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                            <div class="flex gap-3 items-center"><div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><i class="ph ph-fork-knife"></i></div><div><p class="font-bold text-gray-800">${meal.name}</p></div></div>
+                            <div class="flex items-center gap-2"><div class="font-black text-gray-700 mr-2">+${meal.calories}</div><button onclick="editUserMeal(${meal.id})" class="text-blue-400 p-1.5 bg-blue-50 rounded-md"><i class="ph ph-pencil-simple"></i></button><button onclick="deleteUserMeal(${meal.id})" class="text-red-400 p-1.5 bg-red-50 rounded-md"><i class="ph ph-trash"></i></button></div>
+                        </div>`;
+                });
+            }
+            document.getElementById('meals-list').innerHTML = mealsHtml || document.getElementById('empty-meals-msg').outerHTML;
+            
+            const target = userProfile.nutrition.target;
+            document.getElementById('dash-target').textContent = target.toLocaleString();
+            document.getElementById('dash-consumed').textContent = consumed.toLocaleString();
+            const remaining = target - consumed;
+            const remEl = document.getElementById('dash-remaining');
+            remEl.textContent = remaining >= 0 ? `Faltan: ${remaining.toLocaleString()} kcal` : `Excedente: ${Math.abs(remaining).toLocaleString()} kcal`;
+            if(remaining < 0) { remEl.classList.replace('text-gray-400', 'text-red-400'); } else { remEl.classList.replace('text-red-400', 'text-gray-400'); }
+            
+            const p = Math.min((consumed / target) * 100, 100);
+            const bar = document.getElementById('dash-progress-bar');
+            bar.style.width = `${p}%`;
+            if (p >= 100) bar.classList.replace('bg-primary-500', 'bg-secondary'); else bar.classList.replace('bg-secondary', 'bg-primary-500');
+        }
+
+        // Modales Restantes (Añadir Comida, Historial, Progreso)
+        document.getElementById('btn-add-meal').addEventListener('click', () => { document.getElementById('meal-edit-id').value = ''; modals.addMeal.classList.remove('hidden'); });
+        const closeAdd = () => { modals.addMeal.classList.add('hidden'); document.getElementById('form-add-meal').reset(); };
+        document.getElementById('btn-close-add-meal').addEventListener('click', closeAdd); document.getElementById('bg-close-add-meal').addEventListener('click', closeAdd);
+
+        document.getElementById('form-add-meal').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveUserMeal({ id: document.getElementById('meal-edit-id').value ? parseInt(document.getElementById('meal-edit-id').value) : Date.now(), day: selectedDay, name: document.getElementById('meal-name').value, calories: parseInt(document.getElementById('meal-calories').value) });
+            closeAdd();
+        });
+
+        document.getElementById('btn-history').addEventListener('click', () => {
+            const container = document.getElementById('history-list'); let html = '';
+            daysOfWeek.forEach(day => {
+                let dTot = 0;
+                globalMenu.filter(m => m.day === day).forEach(m => dTot += m.calories); dailyMeals.filter(m => m.day === day).forEach(m => dTot += m.calories);
+                const t = userProfile.nutrition.target; const p = Math.min((dTot / t) * 100, 100); const col = dTot > t ? 'bg-red-500' : 'bg-primary-500';
+                html += `<div class="bg-gray-50 rounded-xl p-4 border border-gray-100"><div class="flex justify-between items-center mb-2"><span class="font-bold text-gray-800">${day}</span><span class="text-sm font-black">${dTot} / ${t}</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="${col} h-2 rounded-full" style="width: ${p}%"></div></div></div>`;
+            });
+            container.innerHTML = html; modals.history.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-history').addEventListener('click', () => modals.history.classList.add('hidden'));
+
+        // Gráfico de Peso
+        document.getElementById('btn-weight-progress').addEventListener('click', () => { modals.weightProgress.classList.remove('hidden'); setTimeout(renderWeightChart, 50); });
+        document.getElementById('btn-close-weight-progress').addEventListener('click', () => modals.weightProgress.classList.add('hidden'));
+        document.getElementById('btn-log-weight').addEventListener('click', () => { document.getElementById('new-weight-input').value = userProfile.weight; document.getElementById('modal-log-weight').classList.remove('hidden'); });
+        document.getElementById('btn-close-log-weight').addEventListener('click', () => document.getElementById('modal-log-weight').classList.add('hidden'));
+
+        document.getElementById('form-log-weight').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nw = parseFloat(document.getElementById('new-weight-input').value);
+            const today = new Date().toISOString().split('T')[0];
+            userProfile.weight = nw;
+            const idx = userProfile.weightHistory.findIndex(entry => entry.date === today);
+            if (idx > -1) userProfile.weightHistory[idx].weight = nw; else userProfile.weightHistory.push({ date: today, weight: nw });
+            
+            userProfile.nutrition = calculateNutrition(userProfile.weight, userProfile.height, userProfile.age, userProfile.gender, userProfile.activity, userProfile.goal);
+            
+            localStorage.setItem('feelgood_user', JSON.stringify(userProfile));
+            try { await setDoc(doc(db, "users", userProfile.email), userProfile); } catch(err) { console.log(err); }
+            
+            updateDashboardUI(); renderWeightChart(); document.getElementById('modal-log-weight').classList.add('hidden');
+        });
+
+        function renderWeightChart() {
+            if (!userProfile || !userProfile.weightHistory) return;
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            const data = userProfile.weightHistory.map(e => e.weight);
+            if (weightChartInstance) weightChartInstance.destroy();
+            weightChartInstance = new Chart(ctx, {
+                type: 'line', data: { labels: userProfile.weightHistory.map(e => { const p = e.date.split('-'); return `${p[2]}/${p[1]}`; }), datasets: [{ label: 'Peso', data: data, borderColor: '#16a34a', backgroundColor: 'rgba(74, 222, 128, 0.2)', borderWidth: 3, fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { suggestedMin: Math.min(...data) - 5, suggestedMax: Math.max(...data) + 5 } } }
+            });
+        }
+
+        // Editar Perfil
+        document.getElementById('btn-profile').addEventListener('click', () => {
+            document.getElementById('edit-weight').value = userProfile.weight; document.getElementById('edit-height').value = userProfile.height;
+            document.getElementById('edit-age').value = userProfile.age; document.getElementById('edit-gender').value = userProfile.gender;
+            document.getElementById('edit-activity').value = userProfile.activity; document.getElementById('edit-goal').value = userProfile.goal;
+            modals.editProfile.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-edit-profile').addEventListener('click', () => modals.editProfile.classList.add('hidden'));
+
+        document.getElementById('form-edit-profile').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            userProfile.weight = parseFloat(document.getElementById('edit-weight').value);
+            userProfile.height = parseFloat(document.getElementById('edit-height').value);
+            userProfile.age = parseInt(document.getElementById('edit-age').value);
+            userProfile.gender = document.getElementById('edit-gender').value;
+            userProfile.activity = document.getElementById('edit-activity').value;
+            userProfile.goal = document.getElementById('edit-goal').value;
+
+            userProfile.nutrition = calculateNutrition(userProfile.weight, userProfile.height, userProfile.age, userProfile.gender, userProfile.activity, userProfile.goal);
+            
+            localStorage.setItem('feelgood_user', JSON.stringify(userProfile));
+            try { await setDoc(doc(db, "users", userProfile.email), userProfile); } catch(err) { console.log(err); }
+            
+            updateDashboardUI(); modals.editProfile.classList.add('hidden'); alert('Perfil actualizado y guardado en la nube.');
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            if(confirm('¿Cerrar sesión?')){ localStorage.removeItem('feelgood_user'); userProfile = null; location.reload(); }
+        });
+
+        // Inicializar App
+        window.onload = () => {
+            checkWeeklyReset();
+            const storedMenu = localStorage.getItem('feelgood_menu'); if (storedMenu) globalMenu = JSON.parse(storedMenu);
+            const storedUser = localStorage.getItem('feelgood_user');
+            if (storedUser) {
+                userProfile = JSON.parse(storedUser); loadUserMeals(); setupDashboardByRole();
+                showView('dashboard'); updateDashboardUI(); renderDaysBar(); renderWeeklyMenu();
+            } else { showView('welcome'); }
+        };
     </script>
 </body>
 </html>
