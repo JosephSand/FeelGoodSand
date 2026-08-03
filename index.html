@@ -931,7 +931,7 @@
         document.getElementById('btn-close-admin-users').addEventListener('click', closeAdminUsers);
         document.getElementById('bg-close-admin-users').addEventListener('click', closeAdminUsers);
 
-        function renderAdminUsersList() {
+<comment-tag id="1">        function renderAdminUsersList() {
             const container = document.getElementById('admin-users-list');
             if (usersDB.length === 0) { container.innerHTML = '<p class="text-center text-gray-500 mt-10">No hay usuarios.</p>'; return; }
             let html = '';
@@ -947,7 +947,7 @@
                             <p class="flex flex-col"><span class="font-bold text-gray-400 uppercase text-[9px]">Peso</span> <span class="font-semibold text-gray-800">${u.weight} lbs</span></p>
                             <p class="flex flex-col"><span class="font-bold text-gray-400 uppercase text-[9px]">Estatura</span> <span class="font-semibold text-gray-800">${u.height} cm</span></p>
                             <p class="flex flex-col col-span-2"><span class="font-bold text-gray-400 uppercase text-[9px]">Meta (Kcal)</span> <span class="font-black text-primary-600 text-base">${u.nutrition.target} kcal</span></p>
-                        </div>
+                        </div></comment-tag id="1" text="Modificamos la función `renderAdminUsersList` para mapear y mostrar todos los datos que los usuarios ingresan al registrarse, traduciendo variables del sistema como 'male' u objetivos al español." type="suggestion">
                         <div class="space-y-3 mb-4">
                             <div><label class="text-[10px] font-bold text-gray-500 uppercase block">Correo</label><input type="email" id="edit-email-${u.id}" value="${u.email}" class="w-full p-2 border rounded-lg outline-none bg-white"></div>
                             <div><label class="text-[10px] font-bold text-gray-500 uppercase block">Contraseña</label><input type="text" id="edit-pass-${u.id}" value="${u.password}" class="w-full p-2 border rounded-lg outline-none bg-white"></div>
